@@ -536,7 +536,6 @@
   <div class="lightbox-close" onclick="closeLightbox(event)">×</div>
   <img src="" alt="大图预览" id="lightboxImg">
 </div>
-
   <!-- 页脚 -->
 <div class="footer">
   <div class="footer-name">臻辉班</div>
@@ -545,7 +544,6 @@
   <div class="footer-copy">以青春之名，赴时代之约</div>
   <div class="footer-copyright">Copyright © 2026 臻辉班. All Rights Reserved</div>
 </div>
-
 <script>
   // 对接Cloudflare Pages D1后端接口地址
   const API_URL = "/api/messages";
@@ -553,6 +551,12 @@
   const submitBtn = document.getElementById("submitBtn");
   const danmakuWrap = document.getElementById("danmakuWrap");
   const backTop = document.getElementById("backTop");
+
+  // 弹幕轮询定时器变量
+  let danmakuPollTimer = null;
+  // 轮询间隔：8000毫秒 = 8秒，可自行调整
+  const POLL_INTERVAL = 8000;
+
   // XSS过滤，防止注入攻击
   function escapeHtml(str) {
     return String(str)
@@ -561,14 +565,15 @@
       .replace(/>/g,"&gt;")
       .replace(/"/g,"&quot;");
   }
-  // 渲染弹幕滚动留言，最多展示最新12条
+  // 渲染弹幕滚动留言，最多展示最新12条【已修复逻辑】
   function renderDanmaku(list) {
     danmakuWrap.innerHTML = "";
     if(!list || list.length === 0){
       danmakuWrap.innerHTML = `<div class="danmaku-empty-tip">还没有留言，来写下第一条祝福✨</div>`;
       return;
     }
-    const showList = list.slice(-12);
+    // 后端DESC倒序，新留言在数组头部，取前12条最新
+    const showList = list.slice(0,12);
     showList.forEach(item=>{
       const el = document.createElement("div");
       el.className = "danmaku-item";
@@ -594,6 +599,32 @@
       console.error("读取留言异常：",err);
     }
   }
+
+  // 启动弹幕自动轮询，定时拉取最新留言
+  function startDanmakuPoll() {
+    // 先清除旧定时器，防止多重定时器叠加
+    stopDanmakuPoll();
+    danmakuPollTimer = setInterval(()=>{
+      loadMessages();
+    }, POLL_INTERVAL);
+  }
+  // 停止弹幕轮询
+  function stopDanmakuPoll() {
+    if(danmakuPollTimer){
+      clearInterval(danmakuPollTimer);
+      danmakuPollTimer = null;
+    }
+  }
+
+  // 页面可见性切换：切后台暂停轮询；切回页面恢复轮询，减少无效请求
+  document.addEventListener("visibilitychange", ()=>{
+    if(document.hidden){
+      stopDanmakuPoll();
+    }else{
+      startDanmakuPoll();
+    }
+  });
+
   // 提交新留言到D1
   async function submitMessage() {
     const text = msgInput.value.trim();
@@ -679,7 +710,11 @@
     }
   })
   // 页面加载完毕，读取云端留言【关键入口】
-  window.addEventListener("DOMContentLoaded",loadMessages);
+  window.addEventListener("DOMContentLoaded",()=>{
+    loadMessages();
+    // 页面加载完成后启动自动轮询
+    startDanmakuPoll();
+  });
 </script>
 </body>
 </html>
