@@ -330,6 +330,11 @@
     color:#666;
     margin-top:10px;
   }
+  .footer-copyright {
+    font-size: 12px;
+    color: #888;
+    margin-top: 12px;
+  }
   /* 图片灯箱弹窗 */
   .lightbox {
     position: fixed;
@@ -435,13 +440,11 @@
   <div class="signature">黄欢</div>
   <div class="divider-gold"></div>
 </div>
-
 <!-- 班级介绍 -->
 <div class="about-section">
   <div class="about-title">关于我们</div>
   <div class="about-sub">ABOUT US</div>
 </div>
-
 <!-- 相册区域 -->
 <div class="gallery-section">
   <div class="gallery-header">
@@ -487,7 +490,6 @@
     </div>
   </div>
 </div>
-
 <!-- 寄语祝福 -->
 <div class="blessings">
   <div class="blessing-line highlight">Splendid CLASS</div>
@@ -507,14 +509,12 @@
     <span class="bless-tag">岁岁平安</span>
   </div>
 </div>
-
 <!-- 回忆标题 -->
 <div class="memory-section">
   <div class="memory-title">MEMORY</div>
   <div class="memory-class">臻辉班</div>
   <div class="memory-title">属于我们的时光</div>
 </div>
-
 <!-- 弹幕留言墙 -->
 <div class="wall-section">
   <div class="wall-header">
@@ -529,14 +529,21 @@
     <div class="loading-tip">正在加载云端留言...</div>
   </div>
 </div>
-
 <!-- 返回顶部按钮 -->
 <div class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</div>
-
 <!-- 图片灯箱弹窗 -->
 <div class="lightbox" id="lightbox">
   <div class="lightbox-close" onclick="closeLightbox(event)">×</div>
   <img src="" alt="大图预览" id="lightboxImg">
+</div>
+
+  <!-- 页脚 -->
+<div class="footer">
+  <div class="footer-name">臻辉班</div>
+  <div class="footer-motto">让努力成为一种常态，让优秀成为一种习惯</div>
+  <div class="footer-divider"></div>
+  <div class="footer-copy">以青春之名，赴时代之约</div>
+  <div class="footer-copyright">Copyright © 2026 臻辉班. All Rights Reserved</div>
 </div>
 
 <script>
@@ -546,7 +553,6 @@
   const submitBtn = document.getElementById("submitBtn");
   const danmakuWrap = document.getElementById("danmakuWrap");
   const backTop = document.getElementById("backTop");
-
   // XSS过滤，防止注入攻击
   function escapeHtml(str) {
     return String(str)
@@ -555,7 +561,6 @@
       .replace(/>/g,"&gt;")
       .replace(/"/g,"&quot;");
   }
-
   // 渲染弹幕滚动留言，最多展示最新12条
   function renderDanmaku(list) {
     danmakuWrap.innerHTML = "";
@@ -578,7 +583,6 @@
       danmakuWrap.appendChild(el);
     })
   }
-
   // 从D1数据库读取留言
   async function loadMessages() {
     try {
@@ -590,7 +594,6 @@
       console.error("读取留言异常：",err);
     }
   }
-
   // 提交新留言到D1
   async function submitMessage() {
     const text = msgInput.value.trim();
@@ -619,14 +622,12 @@
       submitBtn.innerText = "发布留言";
     }
   }
-
   // 绑定点击提交
   submitBtn.addEventListener("click",submitMessage);
   // 回车快速发帖
   msgInput.addEventListener("keydown",e=>{
     if(e.key === "Enter") submitMessage();
   })
-
   // 相册图片滚动渐入动画
   const galleryObserver = new IntersectionObserver((entries)=>{
     entries.forEach(en=>{
@@ -634,7 +635,6 @@
     })
   },{threshold:0.1})
   document.querySelectorAll(".gallery-item").forEach(el=>galleryObserver.observe(el));
-
   // 图片灯箱打开
   document.querySelectorAll(".gallery-item").forEach(item=>{
     item.addEventListener("click",()=>{
@@ -658,7 +658,6 @@
   document.addEventListener("keydown",ev=>{
     if(ev.key === "Escape") closeLightbox();
   })
-
   // 花瓣飘落效果
   function createPetal(){
     const p = document.createElement("div");
@@ -671,7 +670,6 @@
     setTimeout(()=>p.remove(),14000);
   }
   setInterval(createPetal,4000);
-
   // 返回顶部按钮显示逻辑
   window.addEventListener("scroll",()=>{
     if(window.scrollY>400){
@@ -680,7 +678,6 @@
       backTop.classList.remove("show");
     }
   })
-
   // 页面加载完毕，读取云端留言【关键入口】
   window.addEventListener("DOMContentLoaded",loadMessages);
 </script>
