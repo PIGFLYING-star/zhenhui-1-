@@ -1,44 +1,51 @@
-/** @type {import('@cloudflare/pages-plugin-types').PagesFunction} */
 export async function onRequest(context) {
   const { request, env } = context;
-  const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Max-Age": "86400"
-  };
+  const db = env.DB;
 
-  // 处理预检OPTIONS请求
-  if (request.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  if (request.method === "GET") {
+    try {
+      const { results } = await db.prepare(`
+        SELECT id, content, create_at 
+        FROM messages 
+        ORDER BY create_at DESC
+      `).all();
+      return new Response(JSON.stringify(results), {
+        headers: {
+          "Content‑Type": "application/json",
+        },
+      });
+    } catch (err) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 500,
+        headers: { "Content‑Type": "application/json" },
+      });
+    }
   }
 
-  try {
-    // GET：获取所有留言
-    if (request.method === "GET") {
-      const { results } = await env.DB.prepare(
-        "SELECT id, content, create_time FROM messages ORDER BY id DESC"
-      ).all();
-      return Response.json(results, { headers: corsHeaders });
-    }
+  if (request.method === "POST") {
+    try {
+      const payload = await request.json();
+      const content = String(payload.content || "").trim();
 
-    // POST：新增留言
-    if (request.method === "POST") {
-      const body = await request.json();
-      const content = String(body.content || "").trim();
-      if (!content || content.length > 200) {
-        return Response.json({ error: "内容不能为空且不超过200字" }, { status: 400, headers: corsHeaders });
+      if (!content) {
+        return new Response(JSON.stringify({ error: "留言不能为空" }), {
+          status: 400,
+          headers: { "Content‑Type": "application/json" },
+        });
       }
-      const now = new Date();
-      const timeStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")} ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
-      await env.DB.prepare(
-        "INSERT INTO messages (content, create_time) VALUES (?, ?)"
-      ).bind(content, timeStr).run();
-      return Response.json({ success: true }, { status: 201, headers: corsHeaders });
-    }
 
-    return Response.json({ error: "方法不允许" }, { status: 405, headers: corsHeaders });
-  } catch (err) {
-    return Response.json({ error: String(err.message) }, { status: 500, headers: corsHeaders });
+      await db.prepare(`INSERT INTO messages(content) VALUES(?)`).bind(content).run();
+
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { "Content‑Type": "application/json" },
+      });
+    } catch (err) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 500,
+        headers: { "Content‑Type": "application/json" },
+      });
+    }
   }
+
+  return new Response("Method Not Allowed", { status: 405 });
 }
